@@ -1,0 +1,703 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>ClauseNova — Document Trust Copilot</title>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,wght@0,400;0,600;1,400&family=Instrument+Sans:wght@400;500;600&family=Noto+Sans+Kannada:wght@400;600&family=Noto+Sans+Devanagari:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#FDFBF7;--card:#FFFDF8;--line:#D9C9B4;--ink:#3D2F2A;--mute:#7A6A60;--esp:#4A3428;
+--hi:#D98B73;--hi-s:#F0C9BB;--md:#EBC66F;--md-s:#F6E5B5;--lo:#A9B88C;--lo-s:#DDE5CB;--ease:cubic-bezier(.22,.8,.3,1);
+padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);box-sizing:border-box}
+*{box-sizing:border-box;margin:0}
+html,body{background:var(--bg);color:var(--ink);font:15px/1.5 'Instrument Sans','Noto Sans Kannada','Noto Sans Devanagari',sans-serif}
+.serif{font-family:'Newsreader','Noto Sans Kannada','Noto Sans Devanagari',serif}
+header{display:flex;align-items:center;justify-content:space-between;padding:18px 32px;border-bottom:1px solid var(--line);position:relative}
+.logo{font:600 26px 'Newsreader',serif;letter-spacing:-.01em;display:flex;align-items:center;gap:10px}
+.logo i{width:22px;height:22px;border-radius:7px;background:var(--esp);display:inline-block;position:relative}
+.logo i:after{content:"";position:absolute;inset:6px;border-radius:3px;background:var(--md)}
+.sub{color:var(--mute);font-size:13px}
+#bar{position:absolute;left:0;bottom:-1px;height:3px;width:0;background:linear-gradient(90deg,var(--md),#D99A2B);opacity:0;border-radius:3px}
+#bar.run{opacity:1;animation:load 1.5s var(--ease) forwards}
+@keyframes load{0%{width:0}60%{width:70%}100%{width:100%}}
+#bar.run{box-shadow:0 0 12px #EBC66F}
+main{position:relative;padding:32px;max-width:1500px;margin:auto}
+.view{transition:opacity .6s var(--ease),filter .6s var(--ease),transform .6s var(--ease)}
+.view.off{opacity:0;filter:blur(14px);transform:translateX(-24px);pointer-events:none;position:absolute;inset:32px 32px auto}
+#dash.off{transform:translateX(24px)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:18px;transition:transform .35s var(--ease),box-shadow .35s var(--ease)}
+.lift:hover{transform:scale(1.02);box-shadow:0 14px 34px rgba(74,52,40,.13)}
+/* step 1 */
+.land{display:grid;grid-template-columns:1fr 340px;gap:28px;align-items:stretch}
+h1{font:400 clamp(34px,4.4vw,54px)/1.08 'Newsreader',serif;letter-spacing:-.02em;max-width:15ch}
+.drop{margin-top:26px;border:2px dashed var(--line);border-radius:22px;padding:54px 28px;text-align:center;background:#FAF4EA;transition:.35s var(--ease)}
+.drop:hover{background:#F6EDDD;border-color:#B99F82}
+.doc-ico{width:54px;height:68px;margin:0 auto 16px;border:1.5px solid var(--esp);border-radius:8px;background:var(--card);position:relative}
+.doc-ico:before,.doc-ico:after{content:"";position:absolute;left:10px;right:10px;height:2px;background:var(--line);top:22px;box-shadow:0 8px var(--line),0 16px var(--line)}
+.btn{margin-top:22px;border:0;background:var(--esp);color:#FDFBF7;font:600 15px inherit;font-family:inherit;padding:15px 30px;border-radius:999px;cursor:pointer;transition:transform .3s var(--ease),box-shadow .3s}
+.btn:hover{transform:scale(1.04);box-shadow:0 10px 24px rgba(74,52,40,.28)}
+.btn:disabled{opacity:.6;cursor:progress}
+.phone{padding:18px;display:flex;flex-direction:column;gap:12px}
+.scr{border-radius:26px;border:1.5px solid var(--esp);padding:16px;background:#F3EADB;min-height:300px;position:relative;overflow:hidden}
+.scr .ln{height:7px;border-radius:4px;background:var(--line);margin:9px 0}
+.frame{position:absolute;inset:48px 22px 70px;border:2px solid var(--esp);border-radius:10px}
+.frame:after{content:"";position:absolute;left:0;right:0;height:2px;background:#D99A2B;animation:scan 2.4s ease-in-out infinite}
+@keyframes scan{0%,100%{top:6%}50%{top:92%}}
+.share{position:absolute;left:16px;right:16px;bottom:14px;background:var(--esp);color:#FDFBF7;border-radius:14px;padding:10px 14px;font-size:13px}
+/* dashboard */
+.top{display:flex;align-items:center;gap:28px;padding:20px 28px;margin-bottom:22px}
+.gauge{width:128px;height:128px;position:relative;flex:none}
+.gauge svg{transform:rotate(-90deg)}
+.gauge .n{position:absolute;inset:0;display:grid;place-content:center;text-align:center;font:600 34px/1 'Newsreader',serif}
+.gauge .n small{font:400 12px 'Instrument Sans';color:var(--mute);margin-top:4px}
+#ring{transition:stroke-dashoffset 1.4s var(--ease) .3s}
+.lang{margin-left:auto;position:relative}
+.chip{border:1px solid var(--line);background:var(--card);border-radius:999px;padding:9px 16px;cursor:pointer;font:500 14px inherit;font-family:inherit;color:var(--ink);transition:.3s var(--ease)}
+.chip:hover{transform:scale(1.02);box-shadow:0 6px 16px rgba(74,52,40,.12)}
+.menu{position:absolute;right:0;top:46px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:6px;min-width:150px;z-index:5;opacity:0;transform:translateY(-6px);pointer-events:none;transition:.25s var(--ease);box-shadow:0 14px 30px rgba(74,52,40,.15)}
+.menu.open{opacity:1;transform:none;pointer-events:auto}
+.menu button{display:block;width:100%;text-align:left;border:0;background:none;padding:9px 12px;border-radius:9px;cursor:pointer;font:inherit;color:var(--ink)}
+.menu button:hover,.menu button.on{background:#F1E7D6}
+.grid{display:grid;grid-template-columns:1.1fr 1fr 310px;gap:22px;align-items:start}
+.pane{height:640px;overflow:auto;padding:22px;scroll-behavior:smooth}
+.page{background:#fff;border:1px solid var(--line);padding:30px 32px;border-radius:6px;font:400 14.5px/1.7 'Newsreader',serif;box-shadow:0 8px 24px rgba(74,52,40,.07)}
+.page h3{font:600 20px 'Newsreader',serif;text-align:center;margin-bottom:14px}
+.page p{margin:0 -10px 10px;padding:6px 10px;border-radius:10px;transition:background .4s,transform .4s var(--ease)}
+.page p[data-c=hi]{background:var(--hi-s)}.page p[data-c=md]{background:var(--md-s)}.page p[data-c=lo]{background:var(--lo-s)}
+.page p.pulse{animation:pulse 1.1s var(--ease)}
+@keyframes pulse{0%{transform:scale(1)}35%{transform:scale(1.035);box-shadow:0 0 0 6px rgba(217,154,43,.25)}100%{transform:scale(1)}}
+.sev{padding:16px 18px;margin-bottom:14px;cursor:pointer;border-left:6px solid}
+.sev.hi{border-left-color:var(--hi)}.sev.md{border-left-color:var(--md)}.sev.lo{border-left-color:var(--lo)}
+.sev.act{background:#FBF3E4;border-color:#B99F82}
+.tag{display:inline-block;font:600 12px inherit;font-family:inherit;padding:3px 10px;border-radius:999px;margin-bottom:6px}
+.hi .tag{background:var(--hi);color:#3A1A10}.md .tag{background:var(--md);color:#3F2E08}.lo .tag{background:var(--lo);color:#26331A}
+.sev h4{font:600 18px 'Newsreader','Noto Sans Kannada','Noto Sans Devanagari',serif;margin-bottom:6px}
+.ex{font-size:13px;color:var(--mute);border-left:2px solid var(--line);padding-left:10px;margin-bottom:8px}
+.pl{font-size:14px}.pl b{font-weight:600}
+.fade{transition:opacity .25s}.fade.out{opacity:0}
+.chat{height:640px;display:flex;flex-direction:column;padding:18px}
+.chat h5{font:600 17px 'Newsreader',serif;margin-bottom:12px}
+.msgs{flex:1;display:flex;flex-direction:column;gap:12px;overflow:auto}
+.b{padding:11px 14px;border-radius:16px;font-size:14px;max-width:92%}
+.u{background:var(--esp);color:#FDFBF7;align-self:flex-end;border-bottom-right-radius:4px}
+.bot{background:#F1E7D6;border-bottom-left-radius:4px}
+/* Presentation UI Elements */
+.badge-review{display:inline-block;background:#C4634A;color:#FFFBF3;font-size:11px;font-weight:700;letter-spacing:.05em;padding:3px 9px;border-radius:6px;text-transform:uppercase}
+.sub-tag{font-size:12.5px;color:var(--mute);font-weight:500;margin-top:2px}
+.ev-bar{background:#FAF0DF;border:1.5px solid var(--md);border-radius:12px;padding:10px 16px;margin-top:12px;display:flex;align-items:center;gap:12px;font-size:13px;color:var(--esp)}
+.ev-tag{background:var(--esp);color:#FDFBF7;font-size:10.5px;font-weight:700;letter-spacing:.06em;padding:2px 8px;border-radius:4px}
+.btn-escalate{background:#FAF0DF!important;border-color:var(--hi)!important;color:var(--esp)!important;font-weight:600}
+.btn-escalate:hover{background:var(--hi-s)!important}
+.guardrail{margin-top:16px;padding:10px 16px;background:rgba(74,44,27,.05);border-radius:10px;font-size:12px;color:var(--mute);display:flex;align-items:center;justify-content:space-between}
+.chat-chips{display:flex;gap:6px;overflow-x:auto;padding:8px 0 6px;scrollbar-width:none}
+.chip-prompt{white-space:nowrap;font-size:11.5px;background:#FAF3E7;border:1px solid var(--line);border-radius:999px;padding:5px 11px;cursor:pointer;color:var(--ink);transition:.2s}
+.chip-prompt:hover{background:var(--esp);color:#FDFBF7}
+.typing{display:inline-flex;align-items:center;gap:4px;padding:10px 14px}
+.typing span{width:6px;height:6px;border-radius:50%;background:var(--esp);animation:blink 1.2s infinite alternate}
+.typing span:nth-child(2){animation-delay:.3s}
+.typing span:nth-child(3){animation-delay:.6s}
+@keyframes blink{0%{opacity:.2}100%{opacity:1}}
+.ask-clause-btn{font-size:11.5px;font-weight:600;color:var(--esp);background:#F3E6D3;border:1px solid var(--line);border-radius:999px;padding:3px 10px;cursor:pointer}
+.ask-clause-btn:hover{background:var(--esp);color:#FDFBF7}
+#reset{position:fixed;right:18px;bottom:calc(18px + env(safe-area-inset-bottom,0px));opacity:.35;z-index:9}
+#reset:hover{opacity:1}
+@media(max-width:1100px){.grid{grid-template-columns:1fr 1fr}.chat{grid-column:1/-1;height:380px}.land{grid-template-columns:1fr}}
+@media(max-width:700px){main{padding:16px}header{padding:14px 16px}.grid{grid-template-columns:1fr}.top{flex-wrap:wrap}.pane{height:520px}}
+@media(prefers-reduced-motion:reduce){*{animation-duration:.01s!important;transition-duration:.01s!important}}
+.rise{opacity:0;transform:translateY(18px)}
+#dash.on .rise{animation:rise .8s var(--ease) forwards;animation-delay:calc(var(--i)*.14s)}
+@keyframes rise{to{opacity:1;transform:none}}
+:root{--bg:#F3E7D6;--card:#FBF4E8;--line:#CBB08C;--ink:#38241A;--mute:#7A614C;--esp:#4A2C1B;--hi:#C4634A;--hi-s:#E9B9A3;--md:#D6A03C;--md-s:#EFD9A0;--lo:#8C9A68;--lo-s:#D3DAB8}
+html,body{background:var(--bg)}
+header,main{z-index:1}header{background:var(--esp);border-color:var(--esp)}
+.logo{color:#F3E7D6}.logo i{background:#F3E7D6}.logo i:after{background:var(--hi)}header .sub{color:#CBB08C}
+.logo i{animation:breathe 3s ease-in-out infinite}@keyframes breathe{50%{transform:rotate(90deg) scale(1.12)}}
+.blobs{position:fixed;inset:0;z-index:0;overflow:hidden;pointer-events:none}
+.blobs i{position:absolute;width:520px;height:520px;border-radius:50%;filter:blur(90px);opacity:.5;animation:drift 16s ease-in-out infinite alternate}
+.blobs i:nth-child(1){background:#E3C9A2;left:-120px;top:80px}.blobs i:nth-child(2){background:#D9A98A;right:-140px;bottom:-120px;animation-delay:-8s}
+.blobs i:nth-child(1){background:#E3C9A2;left:-120px;top:80px}.blobs i:nth-child(2){background:#D9A98A;right:-140px;bottom:-120px;animation-delay:-8s}
+#dash.on .rise { animation: rise .8s var(--ease) forwards; }
+@keyframes drift{to{transform:translate(140px,-90px) scale(1.2)}}
+h1,#land .sub{animation:blurin 1.1s var(--ease) both}#land .sub{animation-delay:.2s}
+@keyframes blurin{from{opacity:0;filter:blur(12px);transform:translateY(16px)}}
+.drop{display:block;cursor:pointer;background:#EBDBC2;border:2px dashed #A98660;animation:glow 3.2s ease-in-out infinite}
+@keyframes glow{50%{box-shadow:0 0 0 10px rgba(169,134,96,.14)}}
+.drop.over{transform:scale(1.03);background:#E2CCA9;border-color:var(--esp);animation:none}
+.drop.has{border-style:solid;border-color:var(--esp);animation:none;background:#F1E4CE}
+.float{animation:float 3s ease-in-out infinite}@keyframes float{50%{transform:translateY(-8px)}}
+.drop.has .doc-ico{background:var(--lo-s);animation:pop .5s var(--ease)}@keyframes pop{from{transform:scale(.6)}}
+.row{display:flex;gap:14px;align-items:center;margin-top:22px}.row .btn{margin:0}
+.ghost{border:1px solid var(--line);background:transparent;color:var(--ink);font:500 14px inherit;font-family:inherit;padding:14px 22px;border-radius:999px;cursor:pointer;transition:.3s var(--ease)}
+.ghost:hover{background:#EBDBC2;transform:scale(1.03)}
+.btn{position:relative;overflow:hidden}.btn:not(:disabled):after{content:"";position:absolute;top:0;bottom:0;width:40px;left:-60px;background:rgba(255,255,255,.28);transform:skewX(-20deg);animation:sheen 3s ease-in-out infinite}
+@keyframes sheen{60%,100%{left:120%}}
+.scr{background:#EBDBC2}
+#ov{position:fixed;inset:0;z-index:30;display:grid;place-content:center;justify-items:center;gap:22px;background:radial-gradient(circle at 50% 40%,#5C3A25,#2B1A10);color:#F3E7D6;opacity:0;pointer-events:none;transition:opacity .6s var(--ease)}
+#ov.show{opacity:1;pointer-events:auto}
+.stage{position:relative;width:240px;height:280px;display:grid;place-content:center}
+.orbit{position:absolute;inset:0;border:1px dashed rgba(243,231,214,.35);border-radius:50%;animation:spin 9s linear infinite}
+.orbit:after{content:"";position:absolute;top:-6px;left:50%;width:12px;height:12px;border-radius:50%;background:var(--md);box-shadow:0 0 16px var(--md)}
+@keyframes spin{to{transform:rotate(360deg)}}
+.sheet{width:150px;height:200px;background:#FBF4E8;border-radius:10px;position:relative;overflow:hidden;padding:22px 16px;animation:tilt 3s ease-in-out infinite;box-shadow:0 20px 50px rgba(0,0,0,.4)}
+@keyframes tilt{50%{transform:rotate(-3deg) translateY(-6px)}}
+.sheet i{display:block;height:8px;border-radius:4px;background:#DCC9AB;margin:11px 0;transition:background .5s}
+.sheet.go .a{background:var(--hi);transition-delay:.9s}.sheet.go .b{background:var(--md);transition-delay:1.8s}.sheet.go .c{background:var(--lo);transition-delay:2.7s}
+.beam{position:absolute;left:0;right:0;height:50px;top:-50px;background:linear-gradient(180deg,transparent,rgba(214,160,60,.55),transparent);animation:beam 1.5s ease-in-out infinite}
+@keyframes beam{to{top:100%}}
+.stg{font:400 28px 'Newsreader',serif;min-height:40px}
+.sbar{width:min(360px,70vw);height:4px;border-radius:4px;background:rgba(243,231,214,.2);overflow:hidden}
+.sbar i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--md),#F3E7D6)}
+.sfile{font-size:13px;color:#CBB08C}
+.pills{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;max-width:420px}
+.pills span{border:1px solid rgba(243,231,214,.35);border-radius:999px;padding:5px 14px;font-size:13px;animation:float 2.4s ease-in-out infinite}
+.pills span:nth-child(2){animation-delay:-.6s}.pills span:nth-child(3){animation-delay:-1.2s}.pills span:nth-child(4){animation-delay:-1.8s}
+#ov.done .stage{animation:pop .6s var(--ease)}
+.page p[data-c=hi]{background:linear-gradient(var(--hi-s),var(--hi-s)) no-repeat left center/100% 100%}
+.page p[data-c=md]{background:linear-gradient(var(--md-s),var(--md-s)) no-repeat left center/100% 100%}
+.page p[data-c=lo]{background:linear-gradient(var(--lo-s),var(--lo-s)) no-repeat left center/100% 100%}
+#dash.on .page p[data-i]{animation:sweep .9s var(--ease) backwards}
+#dash.on .page p[data-i="0"]{animation-delay:1s}#dash.on .page p[data-i="1"]{animation-delay:1.25s}#dash.on .page p[data-i="2"]{animation-delay:1.5s}#dash.on .page p[data-i="3"]{animation-delay:1.75s}#dash.on .page p[data-i="4"]{animation-delay:2s}
+@keyframes sweep{from{background-size:0% 100%}}
+#dash.on .sev{animation:rise .7s var(--ease) backwards}
+.sev:nth-child(1){animation-delay:.7s!important}.sev:nth-child(2){animation-delay:.85s!important}.sev:nth-child(3){animation-delay:1s!important}.sev:nth-child(4){animation-delay:1.15s!important}.sev:nth-child(5){animation-delay:1.3s!important}
+#dash.on #ring{filter:drop-shadow(0 0 6px rgba(214,160,60,.5))}
+html,body{font-size:14px}
+main{max-width:1160px;padding:24px 28px}.view.off{inset:24px 28px auto}
+header{padding:12px 28px}.logo{font-size:22px}
+h1{font-size:clamp(28px,3.4vw,40px);max-width:18ch}
+.land{grid-template-columns:1fr 280px;gap:24px;align-items:start}
+.drop{padding:34px 20px;margin-top:20px;border-radius:18px}
+.drop .serif{font-size:18px!important}
+.doc-ico{width:40px;height:50px;margin-bottom:12px}.doc-ico:before,.doc-ico:after{top:14px;left:8px;right:8px}
+.row{margin-top:16px}.btn{padding:12px 24px;font-size:14px}
+.phone{padding:14px}.phone .serif{font-size:17px!important}.scr{min-height:220px;padding:12px}
+.top{padding:14px 20px;gap:20px;margin-bottom:16px}
+.gauge,.gauge svg{width:96px;height:96px}.gauge .n{font-size:26px}
+#ttl{font-size:22px!important}
+.grid{grid-template-columns:1fr 1fr 260px;gap:16px}
+.pane{height:520px;padding:16px}.chat{height:520px;padding:14px}
+.page{padding:20px 22px;font-size:13.5px;line-height:1.6}.page h3{font-size:17px}
+.sev{padding:12px 14px;margin-bottom:10px}.sev h4{font-size:16px}
+.sev.lift:hover{transform:scale(1.015)}
+.b{font-size:13px;padding:9px 12px}
+.pills{display:none}.stage{transform:scale(.8)}.stg{font-size:22px}
+@media(max-width:1000px){.grid{grid-template-columns:1fr 1fr}.chat{grid-column:1/-1;height:300px}.land{grid-template-columns:1fr}}
+@media(max-width:700px){main{padding:16px}.view.off{inset:16px 16px auto}.grid{grid-template-columns:1fr}.pane{height:420px}.top{flex-wrap:wrap}}
+@keyframes rise{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:none}}
+#tabs{display:flex;gap:4px;background:rgba(243,231,214,.12);padding:4px;border-radius:999px}
+#tabs button{border:0;background:none;color:#CBB08C;font:500 13px inherit;font-family:inherit;padding:7px 16px;border-radius:999px;cursor:pointer;transition:.3s var(--ease)}
+#tabs button.on{background:#F3E7D6;color:var(--esp)}
+.dgrid{display:grid;grid-template-columns:330px 1fr;gap:16px;align-items:start}
+.dform{padding:18px}.fl{font-size:12px;color:var(--mute);margin:12px 0 6px}.dform>.fl:first-child{margin-top:0}
+.opts{display:flex;flex-wrap:wrap;gap:6px}.opts .chip{padding:6px 12px;font-size:13px}
+.chip.on{background:var(--esp);color:#F3E7D6;border-color:var(--esp)}.chip:disabled{opacity:.45;cursor:default}
+.dform input{width:100%;border:1px solid var(--line);background:#FFFBF3;border-radius:10px;padding:9px 12px;font:inherit;color:var(--ink)}
+.dform input:focus{outline:2px solid var(--md);border-color:transparent}
+.dprev{padding:20px}
+.fm{display:flex;align-items:center;gap:14px;margin-bottom:16px}.fm b{font:600 30px 'Newsreader',serif;min-width:44px}
+.fbar{flex:1;height:8px;border-radius:8px;background:#E6D6BC;overflow:hidden}.fbar i{display:block;height:100%;width:0;border-radius:8px;transition:width .7s var(--ease),background .4s}
+.cl{border:1px solid var(--line);border-left:5px solid var(--lo);padding:10px 14px;margin-bottom:10px;border-radius:0 12px 12px 0;background:var(--card)}
+.cl.md{border-left-color:var(--md)}.cl.hi{border-left-color:var(--hi)}
+.ct{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px}.cl .tag{margin:0}.cl p{font-size:14px}
+.cl.in{animation:cin .6s var(--ease) backwards;animation-delay:var(--d)}
+@keyframes cin{from{opacity:0;transform:translateY(14px)}}
+.cl.flash{animation:flash 1s var(--ease)}@keyframes flash{0%{background:var(--md-s);transform:scale(1.015)}}
+@media(max-width:1000px){.dgrid{grid-template-columns:1fr}}
+@media(max-width:700px){#tabs button{padding:6px 10px}header .sub{display:none}}
+#ag{position:fixed;left:18px;bottom:calc(18px + env(safe-area-inset-bottom,0px));z-index:9;display:flex;flex-direction:column;gap:10px;align-items:flex-start}
+#agp{width:min(290px,80vw);padding:14px;opacity:0;transform:translateY(10px) scale(.98);pointer-events:none;transition:.35s var(--ease);box-shadow:0 14px 34px rgba(74,52,40,.18)}
+#agp.open{opacity:1;transform:none;pointer-events:auto}
+#agb{margin:0;padding:10px 18px;font-size:13px}#agb span{background:var(--md);color:var(--esp);border-radius:999px;padding:1px 8px;margin-left:6px}
+.ping{animation:ping .6s var(--ease)}@keyframes ping{50%{transform:scale(1.08)}}
+.av{width:34px;height:34px;border-radius:50%;background:var(--esp);color:#F3E7D6;display:grid;place-content:center;font:600 16px 'Newsreader',serif}
+.agh{display:flex;gap:10px;align-items:center;margin-bottom:6px}
+#mem{list-style:none;padding:0;display:flex;flex-direction:column;gap:6px;font-size:13px}
+#mem li{display:flex;justify-content:space-between;gap:10px;border-bottom:1px dashed var(--line);padding-bottom:5px}
+#mem li span:first-child{color:var(--mute);flex:none}#mem li span:last-child{text-align:right}
+#mem li.n{animation:cin .5s var(--ease)}
+#nx{max-width:100%;font-size:13px}
+#agp input#an{font:600 15px 'Newsreader',serif;border:1px solid var(--line);background:#FFFBF3;border-radius:8px;padding:4px 8px;width:100%;color:var(--ink)}
+.av{font-size:18px;background:#EBDBC2;border:1.5px solid var(--esp)}
+.avs{display:flex;gap:6px;margin:8px 0 4px}
+.avs button{width:34px;height:34px;border-radius:50%;border:1.5px solid var(--line);background:#EBDBC2;font-size:17px;cursor:pointer;transition:.25s var(--ease)}
+.avs button:hover{transform:scale(1.1)}
+.avs button.on{border-color:var(--esp);background:#F3E7D6;box-shadow:0 0 0 3px rgba(74,44,27,.15)}
+#agb #bav,#agb #bn{background:none;padding:0;margin:0;color:inherit}
+#tip{padding:10px 14px;font-size:13px;max-width:260px;cursor:pointer;opacity:0;transform:translateY(8px);pointer-events:none;transition:.4s var(--ease);box-shadow:0 10px 26px rgba(74,52,40,.16)}
+#tip.show{opacity:1;transform:none;pointer-events:auto}
+</style></head>
+<body>
+<div class="blobs"><i></i><i></i></div>
+<header>
+  <div class="logo"><i></i>ClauseNova</div>
+  <nav id="tabs"><button class="on" data-t="review">Review</button><button data-t="draft">Fair Draft</button></nav>
+  <div class="sub">Document Trust Copilot</div>
+  <div id="bar"></div>
+</header>
+<main>
+  <section id="land" class="view">
+    <div class="row"><button class="btn" id="go">Analyse Document</button><button class="ghost" id="sample">Use sample lease</button></div>
+      <div>
+        <h1>Know what you're signing before you sign it.</h1>
+        <p class="sub" style="margin-top:14px;max-width:46ch;font-size:16px">Upload a lease, flat agreement or bank form. ClauseNova flags the few clauses that can cost you.</p>
+        <label class="drop card" id="dz" for="file">
+          <input type="file" id="file" hidden accept=".pdf,.png,.jpg,.jpeg,.doc,.docx">
+          <div class="doc-ico float"></div>
+          <div class="serif" id="dzt" style="font-size:22px">Drag and drop your document</div>
+          <div class="sub" id="dzs">or click to browse. PDF, JPG, PNG or DOCX</div>
+        </label>
+       <div class="row"><button class="btn" id="go">Analyse Document</button><button class="ghost" id="sample">Use sample lease</button></div>
+      </div>
+      <aside class="card phone lift">
+        <div class="serif" style="font-size:20px">Share-to-Scan</div>
+        <div class="sub">Can't share the file? Snap the page. ClauseNova reads it from your camera or share sheet.</div>
+        <div class="scr">
+          <div class="ln" style="width:60%"></div><div class="ln"></div><div class="ln" style="width:85%"></div><div class="ln"></div><div class="ln" style="width:70%"></div><div class="ln"></div>
+          <div class="frame"></div>
+          <div class="share">Share to ClauseNova</div>
+        </div>
+      </aside>
+    </div>
+  </section>
+
+  <section id="dash" class="view off">
+       <div class="card top rise" style="--i:0">
+      <div class="gauge">
+        <svg width="128" height="128" viewBox="0 0 128 128"><circle cx="64" cy="64" r="54" fill="none" stroke="#EADFCC" stroke-width="12"/>
+        <circle id="ring" cx="64" cy="64" r="54" fill="none" stroke="#C4634A" stroke-width="12" stroke-linecap="round" stroke-dasharray="339.3" stroke-dashoffset="339.3"/></svg>
+        <div class="n"><span id="num">0</span><small>out of 100</small></div>
+      </div>
+      <div>
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:4px">
+          <div class="serif" style="font-size:26px" id="ttl">Deal Trust Score</div>
+          <span class="badge-review">REVIEW BEFORE SIGNING</span>
+        </div>
+        <div class="sub fade" id="sum" style="max-width:52ch">Contract Risk Review: 2 critical financial inconsistencies require negotiation.</div>
+      </div>
+      <div style="display:flex;gap:8px;margin-left:auto;align-items:center">
+        <button class="chip btn-escalate" id="copyNoteBtn">⚠️ Escalate to Landlord</button>
+        <button class="chip" id="fix">Draft a fairer version</button>
+        <div class="lang" style="margin-left:0">
+          <button class="chip" id="lb">Language: English ▾</button>
+          <div class="menu" id="menu"></div>
+        </div>
+      </div>
+    </div>
+        <div class="grid">
+      <!-- Column 1: Document Viewer -->
+      <div class="card pane rise" style="--i:1" id="docp">
+        <div class="page"><h3>Rental Lease Agreement</h3><div id="doc"></div></div>
+      </div>
+
+      <!-- Column 2: Risk Cards + Grounded Evidence Bar -->
+      <div class="card pane rise" style="--i:2" style="display:flex;flex-direction:column">
+        <div id="feed"></div>
+        <div class="ev-bar" id="evBar">
+          <span class="ev-tag">EVIDENCE</span>
+          <span id="evText" style="font-weight:500">Clause 7.2 • Deposit • Payment schedule • Source-grounded explanation</span>
+        </div>
+      </div>
+
+      <!-- Column 3: Ask ClauseNova Chat -->
+      <div class="card chat rise" style="--i:3">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;border-bottom:1px solid var(--line);padding-bottom:10px">
+          <h5 style="margin:0">Ask ClauseNova</h5>
+          <span style="font-size:11px;font-weight:600;background:var(--lo-s);color:#2B3D1B;padding:2px 8px;border-radius:999px">● Copilot Active</span>
+        </div>
+        <div class="msgs" id="chatMsgs">
+          <div class="b bot">
+            👋 <b>Welcome!</b> I've analyzed your document. Ask me any doubt about the clauses, risks, or how to negotiate terms:
+          </div>
+        </div>
+        <div class="chat-chips" id="chatChips">
+          <button class="chip-prompt" data-q="Is the security deposit refundable?">💰 Deposit refundable?</button>
+          <button class="chip-prompt" data-q="What is the lock-in penalty?">🔒 Lock-in fine?</button>
+          <button class="chip-prompt" data-q="Who pays for maintenance & repairs?">🛠️ Maintenance cap?</button>
+          <button class="chip-prompt" data-q="Write an email to negotiate with my landlord">✍️ Negotiation email</button>
+        </div>
+        <form id="chatForm" style="display:flex;gap:8px;align-items:center;margin-top:6px">
+          <input type="text" id="chatInput" placeholder="Ask any doubt about this document…" autocomplete="off" style="flex:1;border:1px solid var(--line);background:#FFFBF3;border-radius:999px;padding:9px 14px;font:inherit;font-size:13px;outline:none">
+          <button type="submit" id="chatSend" style="width:36px;height:36px;border-radius:50%;border:none;background:var(--esp);color:#FDFBF7;cursor:pointer">➔</button>
+        </form>
+      </div>
+    </div>
+  </section>
+  <section id="draft" class="view off">
+    <div style="margin-bottom:16px"><div class="serif" style="font-size:28px">Fair Draft</div><div class="sub">Agreement maker. Pick your terms and get a balanced draft, checked clause by clause.</div></div>
+    <div class="dgrid">
+      <div class="card dform">
+        <div class="fl">Agreement type</div>
+        <div class="opts"><button class="chip on">Rental lease</button><button class="chip" disabled>Flat purchase</button><button class="chip" disabled>Bank agreement</button></div>
+        <div class="fl">Landlord</div><input id="ll">
+        <div class="fl">Tenant</div><input id="tn">
+        <div class="fl">Monthly rent (₹)</div><input id="rent" type="number" min="0">
+        <div id="opts"></div>
+      </div>
+      <div class="card dprev">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px"><div class="serif" style="font-size:20px">Rental Agreement</div><span style="display:flex;gap:8px"><button class="chip" id="cp">Copy agreement</button><button class="chip on" id="fin">Finalise</button></span></div>
+        <div class="fm"><span class="sub">Fairness</span><b id="fs">98</b><div class="fbar"><i id="ff"></i></div><span id="fl" class="sub"></span></div>
+        <div id="pv"></div>
+      </div>
+    </div>
+  </section>
+</main>
+<div id="ag"><div id="agp" class="card"><div class="agh"><span class="av" id="avt">🦉</span><div style="flex:1"><input id="an" maxlength="14" value="Nova"><div class="sub">Your assigned agent. Rename it any time.</div></div></div><div class="avs" id="avs"></div><div class="fl">What your agent remembers</div><ul id="mem"></ul><div class="fl">Agent says</div><div class="b bot" id="nx"></div><button class="chip" id="rs" style="margin-top:8px;font-size:13px;padding:6px 14px">Resume draft</button><button class="ghost" id="fg" style="margin-top:12px;padding:8px 16px;font-size:13px">Forget everything</button></div><div id="tip" class="card">Welcome back. Your rental agreement is waiting to be finalised.</div><button id="agb" class="btn"><span id="bav">🦉</span> <span id="bn">Nova</span>, your agent <span id="mc">0</span></button></div>
+<div id="ov"><div class="stage"><div class="orbit"></div><div class="sheet" id="sheet"><i></i><i class="a"></i><i></i><i class="b"></i><i></i><i></i><i class="c"></i><i></i><div class="beam"></div></div></div><div class="stg fade" id="stg">Reading pages…</div><div class="sbar"><i id="sfill"></i></div><div class="sfile" id="sname"></div><div class="pills"><span>Rent</span><span>Deposit</span><span>Lock-in</span><span>Maintenance</span></div></div>
+<button class="chip" id="reset">Reset Demo</button>
+
+<script>
+const L=['English','ಕನ್ನಡ','हिन्दी'],K=['en','kn','hi'];
+const UI={ttl:['Deal Trust Score','ಡೀಲ್ ಟ್ರಸ್ಟ್ ಸ್ಕೋರ್','डील ट्रस्ट स्कोर'],
+sum:['Mostly fair, with 2 clauses worth negotiating before you sign.','ಹೆಚ್ಚಿನದು ನ್ಯಾಯಯುತ; ಸಹಿ ಮಾಡುವ ಮೊದಲು 2 ಷರತ್ತುಗಳ ಬಗ್ಗೆ ಮಾತನಾಡಿ.','ज़्यादातर ठीक है; साइन करने से पहले 2 शर्तों पर बात करें।'],
+pl:['Plain language','ಸರಳ ಭಾಷೆಯಲ್ಲಿ','सरल भाषा में'],
+lang:['Language','ಭಾಷೆ','भाषा'],
+sev:{hi:['HIGH RISK','ಹೆಚ್ಚು ಅಪಾಯ','उच्च जोखिम'],md:['MEDIUM RISK','ಮಧ್ಯಮ ಅಪಾಯ','मध्यम जोखिम'],lo:['LOW RISK','ಕಡಿಮೆ ಅಪಾಯ','कम जोखिम']}};
+let C=[
+{s:'hi',
+ sub:'₹40,000 numeric vs ₹60,000 written',
+ t:['Security deposit mismatch','ಠೇವಣಿ ಮೊತ್ತ ಹೊಂದಿಕೆಯಿಲ್ಲ','जमानत राशि में अंतर'],
+ x:'“The Tenant shall pay a Security Deposit of Rs. 40,000/- (Rupees Sixty Thousand only) refundable at the end of the term.”',
+ p:['Financial Mismatch: Words state ₹60,000 but numbers state ₹40,000. Risk of ₹20,000 dispute on refund.','ಪದಗಳು ₹60,000 ಎಂದು ಹೇಳುತ್ತವೆ ಆದರೆ ಸಂಖ್ಯೆ ₹40,000. ₹20,000 ವಿವಾದದ ಅಪಾಯ.','शब्दों में ₹60,000 और अंकों में ₹40,000 लिखा है। वापसी पर ₹20,000 के विवाद का खतरा।'],
+ ev:'Clause 7.2 • Deposit • Payment schedule • Source-grounded explanation'},
+
+{s:'hi',
+ sub:'Tenant bears all repairs without limit',
+ t:['Uncapped Maintenance Obligations','ಮಿತಿಯಿಲ್ಲದ ನಿರ್ವಹಣೆ ಹೊಣೆ','असीमित रखरखाव ज़िम्मेदारी'],
+ x:'“The Tenant shall bear all repair and maintenance costs of the Premises, without limit.”',
+ p:['You pay for every repair, even major structural and plumbing issues. There is no cap.','ಎಲ್ಲಾ ದುರಸ್ತಿ ವೆಚ್ಚವನ್ನು ನೀವೇ ಭರಿಸಬೇಕು. ಮಿತಿ ಇಲ್ಲ.','हर मरम्मत का खर्च आपका है, बड़ी मरम्मत भी। कोई सीमा नहीं।'],
+ ev:'Clause 5.3 • Maintenance • Structural vs minor repairs • Uncapped liability'},
+
+{s:'md',
+ sub:'Exit protection is unclear',
+ t:['Lock-in period','ಲಾಕ್-ಇನ್ ಅವಧಿ','लॉक-इन अवधि'],
+ x:'“Neither party may exit within 11 months; early termination attracts a 3-month rent forfeiture penalty.”',
+ p:['Moving out early costs 3 months of rent with zero exit safeguards for tenant.','11 ತಿಂಗಳ ಮೊದಲು ಹೊರಟರೆ ಮೂರು ತಿಂಗಳ ಬಾಡಿಗೆ ದಂಡ.','11 महीने से पहले निकलने पर 3 महीने का किराया ज़ब्त, कोई सुरक्षा नहीं।'],
+ ev:'Clause 4.1 • Term • Early exit penalty • Minimum commitment period'},
+
+{s:'md',
+ sub:'10% annual escalation',
+ t:['Annual Rent Escalation','ವಾರ್ಷಿಕ ಬಾಡಿಗೆ ಏರಿಕೆ','सालाना किराया वृद्धि'],
+ x:'“Rent shall increase by 10% at the start of each year.”',
+ p:['Rent rises 10% every year. Typical residential benchmark is 5%.','ಪ್ರತಿ ವರ್ಷ ಬಾಡಿಗೆ 10% ಹೆಚ್ಚಾಗುತ್ತದೆ. 5% ಕೇಳಿ.','हर साल किराया 10% बढ़ेगा। मानक 5% है।'],
+ ev:'Clause 3.2 • Rent hike • 2x standard market inflation'},
+
+{s:'lo',
+ sub:'Clause needs supporting evidence',
+ t:['Possession timeline','ಸ್ವಾಧೀನ ಸಮಯಾವಧಿ','कब्ज़ा समय-सीमा'],
+ x:'“Possession of the premises shall be delivered on the 1st of the subsequent calendar month.”',
+ p:['Handover date is stated, but no delay compensation or remedy is specified.','ಕೀ ಹಸ್ತಾಂತರ ದಿನಾಂಕವಿದೆ, ಆದರೆ ವಿಳಂಬವಾದರೆ ಯಾವುದೇ ಪರಿಹಾರವಿಲ್ಲ.','तारीख तय है, लेकिन देरी होने पर हर्ज़ाना तय नहीं है।'],
+ ev:'Clause 1.4 • Handover date • Delay compensation omitted'}
+];
+const filler=['This Agreement is made between the Landlord and the Tenant for residential use of the Premises located in Bengaluru.','The Tenant shall use the Premises solely as a private dwelling and shall not sublet any part of it.'];
+const $=id=>document.getElementById(id);
+let lg=0,act=-1;
+function build(){
+ const d=$('doc');d.innerHTML='';
+ d.innerHTML=`<p>${filler[0]}</p>`+C.map((c,i)=>`<p data-i="${i}" data-c="${c.s}">${c.x.slice(1,-1)}</p>`+(i===0?`<p>${filler[1]}</p>`:'')).join('')+`<p>Signed by both parties on the date first written above.</p>`;
+ d.querySelectorAll('[data-i]').forEach(p=>{p.style.cursor='pointer';p.onclick=()=>pick(+p.dataset.i,false)});
+ $('menu').innerHTML=L.map((l,i)=>`<button data-l="${i}">${l}</button>`).join('');
+ $('menu').querySelectorAll('button').forEach(b=>b.onclick=()=>{setLang(+b.dataset.l);$('menu').classList.remove('open')});
+ render();
+}
+function render(){
+ $('ttl').textContent=UI.ttl[lg];$('sum').textContent=UI.sum[lg];
+ $('lb').textContent=UI.lang[lg]+': '+L[lg]+' ▾';
+ $('menu').querySelectorAll('button').forEach((b,i)=>b.classList.toggle('on',i===lg));
+ $('feed').innerHTML=C.map((c,i)=>`
+   <div class="card sev lift ${c.s} ${i===act?'act':''}" data-i="${i}">
+     <div style="display:flex;justify-content:space-between;align-items:center">
+       <span class="tag">[${UI.sev[c.s][lg]}]</span>
+       <span class="sub-tag" style="font-size:12px;color:var(--mute)">${c.sub}</span>
+     </div>
+     <h4>${c.t[lg]}</h4>
+     <div class="ex">${c.x}</div>
+     <div class="pl"><b>${UI.pl[lg]}:</b> <span class="fade">${c.p[lg]}</span></div>
+   </div>`).join('');
+ $('feed').querySelectorAll('.sev').forEach(e=>e.onclick=()=>pick(+e.dataset.i,true));
+}
+function setLang(i){
+ if(i===lg)return;
+ const f=document.querySelectorAll('#sum,#feed');f.forEach(e=>e.style.opacity=0);
+ setTimeout(()=>{lg=i;remember('Language',L[lg]);render();$('feed').style.transition='opacity .3s';f.forEach(e=>e.style.opacity=1)},250);
+}
+function pick(i,scroll){
+ act=i;
+ document.querySelectorAll('.sev').forEach((e,j)=>e.classList.toggle('act',j===i));
+ const p=$('doc').querySelector(`[data-i="${i}"]`);
+ if(scroll){const pane=$('docp');pane.scrollTo({top:p.offsetTop-pane.clientHeight/3,behavior:'smooth'})}
+ if(p){p.classList.remove('pulse');void p.offsetWidth;p.classList.add('pulse');}
+ if(!scroll){const e=$('feed').querySelector(`[data-i="${i}"]`);if(e)$('feed').scrollTo({top:e.offsetTop-80,behavior:'smooth'})}
+ 
+ // Dynamically update the Grounded Evidence Bar from your presentation
+ if(C[i] && $('evText')) {
+   $('evText').textContent = C[i].ev;
+ }
+}
+let scoreVal=62; // Score 62 from your Datathon brief
+function score(){
+ $('ring').style.strokeDashoffset=339.3*(1-scoreVal/100);
+ let n=0;const t=setInterval(()=>{n+=2;$('num').textContent=Math.min(n,scoreVal);if(n>=scoreVal)clearInterval(t)},22);
+}
+let file=null;const dz=$('dz');
+function setFile(f){
+  file=f;
+  remember('Last document',f.name);
+  dz.classList.add('has');dz.classList.remove('over');
+  $('dzt').textContent=f.name;
+  $('dzs').textContent=(f.size?Math.max(1,Math.round(f.size/1024))+' KB. ':'')+'Ready to analyze';
+  $('go').disabled=false;
+  $('go').textContent='⚡ Analyse Document';
+}
+$('file').onchange=e=>{if(e.target.files[0])setFile(e.target.files[0])};
+['dragenter','dragover'].forEach(v=>dz.addEventListener(v,e=>{e.preventDefault();dz.classList.add('over')}));
+['dragleave','drop'].forEach(v=>dz.addEventListener(v,e=>{e.preventDefault();dz.classList.remove('over')}));
+dz.addEventListener('drop',e=>{const f=e.dataTransfer.files[0];if(f)setFile(f)});
+$('sample').onclick=()=>setFile({name:'Rental_Lease_Agreement.pdf',size:0});
+const STG=['Reading pages…','Extracting clauses…','Matching risk taxonomy…','Scoring the deal…','Report ready'];
+$('go').onclick=async()=>{
+  if($('ov').classList.contains('show'))return;
+  if(!file) setFile({name:'Rental_Lease_Agreement.pdf',size:24576});
+
+  $('sname').textContent=file.name;
+  const ov=$('ov');
+  ov.classList.remove('done');
+  ov.classList.add('show');
+  $('sheet').classList.add('go');
+  $('bar').classList.remove('run');
+  void $('bar').offsetWidth;
+  $('bar').classList.add('run');
+
+  // Smooth progress bar fill across 3.6s
+  $('sfill').style.transition='width 3.6s cubic-bezier(.4,0,.2,1)';
+  requestAnimationFrame(()=>$('sfill').style.width='100%');
+
+  // Cycle through scanning status stages
+  STG.forEach((s,i)=>{
+    setTimeout(()=>{
+      const e=$('stg');
+      e.classList.add('out');
+      setTimeout(()=>{ e.textContent=s; e.classList.remove('out'); }, 180);
+    }, i * 780);
+  });
+
+  // Wait 3.8 seconds for the scan animation
+  await new Promise(r=>setTimeout(r, 3800));
+
+  // Switch to Score & Risk Cards Dashboard
+  ov.classList.add('done');
+  await new Promise(r=>setTimeout(r, 300));
+  ov.classList.remove('show','done');
+  $('sheet').classList.remove('go');
+  $('bar').classList.remove('run');
+
+  scoreVal=74;
+  build();
+  $('land').classList.add('off');
+  $('dash').classList.remove('off');
+  $('dash').classList.add('on');
+  analyzed=true;
+
+  remember('Last scan', file.name+', score 74/100, 2 high risks');
+  score();
+};
+$('lb').onclick=e=>{e.stopPropagation();$('menu').classList.toggle('open')};
+document.addEventListener('click',()=>$('menu').classList.remove('open'));
+$('reset').onclick=()=>{
+ $('dash').classList.add('off');$('dash').classList.remove('on');
+ $('land').classList.remove('off');
+ $('bar').classList.remove('run');
+ file=null;dz.classList.remove('has','over');$('dzt').textContent='Drag and drop your document';$('dzs').textContent='or click to browse. PDF, JPG, PNG or DOCX';$('go').disabled=true;$('file').value='';
+ $('ov').classList.remove('show','done');$('sheet').classList.remove('go');$('sfill').style.transition='none';$('sfill').style.width='0';$('stg').textContent=STG[0];
+ // --- Ask ClauseNova Chat Logic ---
+const chatMsgs = $('chatMsgs');
+
+function addMsg(html, isUser) {
+  const d = document.createElement('div');
+  d.className = 'b ' + (isUser ? 'u' : 'bot');
+  d.innerHTML = html;
+  chatMsgs.appendChild(d);
+  chatMsgs.scrollTop = chatMsgs.scrollHeight;
+}
+
+function answerDoubt(q) {
+  if (!q || !q.trim()) return;
+  addMsg(q, true);
+  $('chatInput').value = '';
+
+  const typ = document.createElement('div');
+  typ.className = 'b bot typing';
+  typ.innerHTML = '<span></span><span></span><span></span>';
+  chatMsgs.appendChild(typ);
+  chatMsgs.scrollTop = chatMsgs.scrollHeight;
+
+  setTimeout(() => {
+    typ.remove();
+    const lq = q.toLowerCase();
+    let ans = '';
+
+    if (/deposit|refund|advance|forfeit/.test(lq)) {
+      ans = '🚨 <b>Clause 2 (High Risk):</b> The agreement states a 6-month deposit is forfeited on early exit. Standard fair market practice is 1–2 months deposit, refundable within 15–30 days of handover.';
+    } else if (/maintenance|repair|leak|paint/.test(lq)) {
+      ans = '⚠️ <b>Clause 1 (High Risk):</b> Uncapped maintenance obligates you to pay for major structural repairs. Ask for a cap: tenant pays minor repairs up to ₹2,000, and owner covers structural repairs.';
+    } else if (/lock-in|penalty|early exit|11 month/.test(lq)) {
+      ans = '⚖️ <b>Clause 3 (Medium Risk):</b> Exiting before 11 months costs 3 months rent. Fair terms cap the penalty at 1 month rent with a 30-day notice.';
+    } else if (/escalation|increase|10%|hike/.test(lq)) {
+      ans = '📈 <b>Clause 4 (Medium Risk):</b> 10% annual escalation is above typical residential inflation (5%). Negotiate to cap yearly escalation at 5%.';
+    } else if (/email|template|negotiate|message/.test(lq)) {
+      ans = '📝 <b>Copy-paste negotiation message:</b><br><i>"Dear Landlord, thank you for the draft lease! Before signing, could we agree to: (1) Cap tenant repairs to minor maintenance up to ₹2,000, and (2) Standardise deposit refund to 15 days upon exit? Looking forward to finalising!"</i>';
+    } else {
+      ans = '🔍 <b>ClauseNova Insight:</b> For residential leases, Indian courts and Tenancy norms recommend bilateral fairness. Avoid agreeing to unilateral penalty forfeiture or uncapped repair obligations.';
+    }
+
+    addMsg(ans, false);
+  }, 600);
+}
+
+$('chatForm').onsubmit = (e) => { e.preventDefault(); answerDoubt($('chatInput').value); };
+$('chatChips').querySelectorAll('button').forEach(btn => {
+  btn.onclick = () => answerDoubt(btn.dataset.q);
+});
+ analyzed=false;tab('review');resetDraft();forget();seed();resetAgent();showTip();lg=0;act=-1;$('ring').style.strokeDashoffset=339.3;$('num').textContent='0';$('docp').scrollTop=0;
+ build();
+};
+let analyzed=false;
+function tab(t){
+ document.querySelectorAll('#tabs button').forEach(b=>b.classList.toggle('on',b.dataset.t===t));
+ const r=analyzed?'dash':'land';
+ ['land','dash','draft'].forEach(v=>$(v).classList.toggle('off',v!==(t==='draft'?'draft':r)));
+ if(t==='draft')renderDraft();
+}
+document.querySelectorAll('#tabs button').forEach(b=>b.onclick=()=>{if($('ov').classList.contains('show'))return;tab(b.dataset.t)});
+$('fix').onclick=()=>tab('draft');
+const D={ll:'Meera Rao',tn:'Rahul Sharma',rent:25000,dep:2,lock:6,notice:30,esc:5,cap:true};
+const D0=Object.assign({},D);
+const OPT={dep:{l:'Security deposit',v:[1,2,3,6],f:v=>v+(v>1?' months':' month')},lock:{l:'Lock-in period',v:[3,6,11,12],f:v=>v+' months'},notice:{l:'Notice period',v:[15,30,60],f:v=>v+' days'},esc:{l:'Yearly rent increase',v:[0,5,10],f:v=>v+'%'},cap:{l:'Repair costs',v:[true,false],f:v=>v?'Capped, landlord pays structural':'Tenant pays all'}};
+const PEN={dep:{6:22,3:6},lock:{6:2,11:10,12:14},notice:{15:4,60:4},esc:{10:12},cap:{false:24}};
+const TL={lo:'Balanced',md:'Negotiate',hi:'Risky'};
+const inr=n=>'₹'+Number(n||0).toLocaleString('en-IN');
+function risk(k){const v=D[k];if(k==='dep')return v>=6?'hi':v>=3?'md':'lo';if(k==='lock')return v>=12?'hi':v>=11?'md':'lo';if(k==='notice')return v!==30?'md':'lo';if(k==='esc')return v>=10?'hi':'lo';if(k==='cap')return D.cap?'lo':'hi';return 'lo'}
+function clauses(){const r=D.rent;return [
+ ['parties','Parties',`This agreement is made between ${D.ll||'the Landlord'} (Landlord) and ${D.tn||'the Tenant'} (Tenant).`,'lo'],
+ ['rent','Rent',`Tenant pays ${inr(r)} a month by the 5th. ${D.esc?`Rent rises ${D.esc}% each year.`:'Rent stays fixed for the full term.'}`,risk('esc')],
+ ['dep','Deposit',`Deposit of ${D.dep} month${D.dep>1?'s':''} rent (${inr(r*D.dep)}) is refunded within 15 days of handover, less proven damages.`,risk('dep')],
+ ['cap','Repairs',D.cap?`Tenant pays small repairs up to ${inr(2000)} each. Structural repairs are the Landlord's cost.`:`Tenant bears all repair and maintenance costs without limit.`,risk('cap')],
+ ['lock','Lock-in',`Neither side may leave in the first ${D.lock} months. Early exit costs one month's rent.`,risk('lock')],
+ ['notice','Notice',`Either side may end this agreement with ${D.notice} days' written notice.`,risk('notice')]]}
+function renderDraft(ch){
+ $('opts').innerHTML=Object.keys(OPT).map(k=>`<div class='fl'>${OPT[k].l}</div><div class='opts'>${OPT[k].v.map(v=>`<button class='chip${D[k]===v?' on':''}' data-k='${k}' data-v='${v}'>${OPT[k].f(v)}</button>`).join('')}</div>`).join('');
+ $('opts').querySelectorAll('button').forEach(b=>b.onclick=()=>{const k=b.dataset.k;D[k]=k==='cap'?b.dataset.v==='true':Number(b.dataset.v);remember('Draft preference',D.lock+'-month lock-in, '+D.notice+'-day notice, '+(D.cap?'repairs capped':'no repair cap'));renderDraft(k==='esc'?'rent':k)});
+ $('pv').innerHTML=clauses().map((c,i)=>`<div class='cl ${c[3]}${ch===undefined?' in':''}${c[0]===ch?' flash':''}' style='--d:${i*.12}s'><div class='ct'><b>${i+1}. ${c[1]}</b><span class='tag'>${TL[c[3]]}</span></div><p>${c[2]}</p></div>`).join('');
+ let s=100;for(const k in PEN){s-=PEN[k][D[k]]||0}s=Math.max(0,s);
+ $('fs').textContent=s;$('ff').style.width=s+'%';$('ff').style.background=s>=85?'var(--lo)':s>=65?'var(--md)':'var(--hi)';
+ $('fl').textContent=s>=85?'Balanced':s>=65?'Needs negotiation':'Risky';
+}
+function syncInputs(){$('ll').value=D.ll;$('tn').value=D.tn;$('rent').value=D.rent}
+function resetDraft(){Object.assign(D,D0);syncInputs();const f=$('fin');delete f.dataset.d;f.textContent='Finalise'}
+$('fin').onclick=()=>{const b=$('fin');if(b.dataset.d)return;b.dataset.d=1;b.textContent='Finalised ✓';remember('Pending','Nothing left. Agreement finalised');remember('Last session','Rental agreement finalised')};
+$('ll').oninput=e=>{D.ll=e.target.value;renderDraft('parties')};
+$('tn').oninput=e=>{D.tn=e.target.value;renderDraft('parties')};
+$('rent').oninput=e=>{D.rent=Number(e.target.value)||0;renderDraft('rent')};
+$('cp').onclick=()=>{
+ const t='RENTAL AGREEMENT\n\n'+clauses().map((c,i)=>(i+1)+'. '+c[1]+': '+c[2]).join('\n\n');
+ const say=m=>{$('cp').textContent=m;setTimeout(()=>$('cp').textContent='Copy agreement',1600)};
+ try{navigator.clipboard.writeText(t).then(()=>say('Copied'),()=>say('Select text to copy'))}catch(e){say('Select text to copy')}
+};
+const M={};let lastK='';
+function remember(k,v){M[k]=v;lastK=k;drawAg();const b=$('agb');b.classList.remove('ping');void b.offsetWidth;b.classList.add('ping')}
+function forget(){for(const k in M)delete M[k];lastK='';drawAg()}
+const SEED={'Last session':'Rental agreement drafted','Pending':'Finalising the agreement','Draft preference':'6-month lock-in, 30-day notice, repairs capped'};
+function seed(){Object.assign(M,SEED);lastK='';drawAg()}
+const AV=['🦉','🦊','🐻','🌿','🧭','☕'];const AG={name:'Nova',av:'🦉'};
+function drawAg(){
+ const ks=Object.keys(M);
+ $('mc').textContent=ks.length;
+ $('mem').innerHTML=ks.length?ks.map(k=>`<li class='${k===lastK?'n':''}'><span>${k}</span><span>${M[k]}</span></li>`).join(''):`<li><span>Nothing yet. Nova learns as you go.</span></li>`;
+ const d=M['Last document'],l=M['Language'],p=M['Draft preference'],pend=/Finalising/.test(M['Pending']||''),n=AG.name||'Your agent';
+ $('nx').textContent=ks.length?('Welcome back, it is '+n+'. '+(M['Last session']?M['Last session']+' last time. ':'')+(pend?'Finalising is the only thing left. ':'')+(d?'You also scanned '+d+'. ':'')+(l?'I will reply in '+l+'. ':'')+(p?'I kept your terms: '+p+'.':'')).trim():n+' greets returning users with what it learned.';
+ $('rs').style.display=pend?'inline-block':'none';
+}
+$('agb').onclick=()=>{$('agp').classList.toggle('open');$('tip').classList.remove('show')};
+$('fg').onclick=forget;
+function paintAgent(){$('avt').textContent=AG.av;$('bav').textContent=AG.av;$('bn').textContent=AG.name||'Agent';$('avs').innerHTML=AV.map(a=>`<button class='${a===AG.av?'on':''}' data-a='${a}'>${a}</button>`).join('');$('avs').querySelectorAll('button').forEach(b=>b.onclick=()=>{AG.av=b.dataset.a;paintAgent();remember('Agent avatar',AG.av)});drawAg()}
+$('an').oninput=e=>{AG.name=e.target.value.trim();$('bn').textContent=AG.name||'Agent';drawAg()};
+$('an').onchange=()=>remember('Agent name',AG.name||'Agent');
+function resetAgent(){AG.name='Nova';AG.av='🦉';$('an').value='Nova';paintAgent()}
+function showTip(){const t=$('tip');t.classList.add('show');setTimeout(()=>t.classList.remove('show'),9000)}
+$('tip').onclick=()=>{$('agp').classList.add('open');$('tip').classList.remove('show')};
+$('rs').onclick=()=>{$('agp').classList.remove('open');tab('draft')};
+// --- Escalate to Landlord Counter-Offer ---
+if ($('copyNoteBtn')) {
+  $('copyNoteBtn').onclick = () => {
+    const note = `Dear Landlord,
+
+I reviewed the draft rental agreement. Before signing, our scan flagged two critical inconsistencies:
+
+1. Clause 7.2 (Deposit Mismatch): Numeric figure states Rs. 40,000 but written words state Sixty Thousand. Please standardise this to Rs. 40,000.
+2. Clause 5.3 (Maintenance): Please cap tenant maintenance to minor repairs under Rs. 2,000, with structural repairs borne by the owner.
+
+Could you please confirm these adjustments so we can finalise?
+
+Best regards,
+Rahul Sharma`;
+
+    navigator.clipboard.writeText(note).then(() => {
+      const btn = $('copyNoteBtn');
+      const old = btn.textContent;
+      btn.textContent = 'Counter-Offer Copied ✓';
+      btn.style.background = 'var(--lo-s)';
+      setTimeout(() => { btn.textContent = old; btn.style.background = '#FAF0DF'; }, 2200);
+    });
+  };
+}
+
+// --- Ask ClauseNova Chat Logic ---
+const chatMsgs = $('chatMsgs');
+function addMsg(html, isUser) {
+  if (!chatMsgs) return;
+  const d = document.createElement('div');
+  d.className = 'b ' + (isUser ? 'u' : 'bot');
+  d.innerHTML = html;
+  chatMsgs.appendChild(d);
+  chatMsgs.scrollTop = chatMsgs.scrollHeight;
+}
+
+function answerDoubt(q) {
+  if (!q || !q.trim()) return;
+  addMsg(q, true);
+  if ($('chatInput')) $('chatInput').value = '';
+
+  const typ = document.createElement('div');
+  typ.className = 'b bot typing';
+  typ.innerHTML = '<span></span><span></span><span></span>';
+  if (chatMsgs) { chatMsgs.appendChild(typ); chatMsgs.scrollTop = chatMsgs.scrollHeight; }
+
+  setTimeout(() => {
+    typ.remove();
+    const lq = q.toLowerCase();
+    let ans = '';
+
+    if (/mismatch|deposit|40,000|60,000/.test(lq)) {
+      ans = '🚨 <b>Clause 7.2 Evidence:</b> The agreement contains an internal inconsistency: <i>₹40,000 numeric vs ₹60,000 written</i>. If signed as-is, you risk losing ₹20,000 during refund. Ask landlord to align numbers before signing.';
+    } else if (/lock-in|exit|penalty/.test(lq)) {
+      ans = '⚖️ <b>Clause 4.1 Evidence:</b> 11-month lock-in carries a 3-month rent forfeiture penalty without clear exit protection. Fair market standard is a 1-month penalty or standard 30-day notice.';
+    } else if (/maintenance|repair/.test(lq)) {
+      ans = '⚠️ <b>Clause 5.3 Evidence:</b> Uncapped repair obligations mean tenant bears major plumbing and structural costs without limit. Propose a ₹2,000 cap.';
+    } else {
+      ans = '🔍 <b>ClauseNova Grounded Insight:</b> This risk rule was triggered based on jurisdictional standards in Bengaluru leases. Tap <b>"⚠️ Escalate to Landlord"</b> at top to send a pre-formatted counter-offer.';
+    }
+
+    addMsg(ans, false);
+  }, 600);
+}
+
+if ($('chatForm')) {
+  $('chatForm').onsubmit = (e) => { e.preventDefault(); answerDoubt($('chatInput').value); };
+}
+if ($('chatChips')) {
+  $('chatChips').querySelectorAll('button').forEach(btn => {
+    btn.onclick = () => answerDoubt(btn.dataset.q);
+  });
+}
+seed();paintAgent();showTip();
+syncInputs();
+build();
+</script>
+</body></html>
